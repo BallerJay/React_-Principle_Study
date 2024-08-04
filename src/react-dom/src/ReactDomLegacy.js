@@ -1,12 +1,16 @@
 import { isValidContainerLegacy } from './ReactDOMRoot';
 
-import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE } from '../../ReactSymbols';
+import {
+  MOVE,
+  CREATE,
+  REACT_ELEMENT_TYPE,
+  REACT_FORWARD_REF_TYPE,
+  REACT_TEXT,
+} from '../../ReactSymbols';
 
 import { addEvent } from './ReactEvent';
 
 export function render(VNode, container) {
-  debugger;
-
   /**
    * @description
    * render方法所做的事情
@@ -32,14 +36,16 @@ function mount(VNode, container) {
 }
 
 function mountArray(VNodeChildren, parentNode) {
-  for (const child of VNodeChildren) {
-    if (typeof child === 'string') {
-      parentNode.appendChild(document.createTextNode(child));
-    }
-    if (typeof child === 'object' && child.type) {
-      mount(child, parentNode);
-    }
+  for (let i = 0; i < VNodeChildren.length; i++) {
+    VNodeChildren[i].index = i;
+    mount(VNodeChildren[i], parentNode);
   }
+  // for (const child of VNodeChildren) {
+
+  //   if (typeof child === 'object' && child.type) {
+  //     mount(child, parentNode);
+  //   }
+  // }
 }
 
 /**
@@ -48,7 +54,8 @@ function mountArray(VNodeChildren, parentNode) {
  * @returns
  */
 function createDom(VNode) {
-  console.log(VNode, 'VNode');
+  // debugger;
+  // console.log(VNode, 'VNode');
   const { type, props, ref } = VNode;
   let dom;
   // forwardRef组件
@@ -67,6 +74,9 @@ function createDom(VNode) {
     // 处理函数式组件
     return getDOMByFunctionComponent(VNode);
   }
+  if (type === REACT_TEXT) {
+    dom = document.createTextNode(props.text);
+  }
   if (type && VNode.$$typeof === REACT_ELEMENT_TYPE) {
     dom = document.createElement(type);
   }
@@ -75,9 +85,10 @@ function createDom(VNode) {
       mount(props.children, dom);
     } else if (Array.isArray(props.children)) {
       mountArray(props.children, dom);
-    } else if (typeof props.children === 'string') {
-      dom.appendChild(document.createTextNode(props.children));
     }
+    // else if (typeof props.children === 'string') {
+    //   dom.appendChild(document.createTextNode(props.children));
+    // }
   }
   // 处理元素的属性  例如style等等
   setPropsForDOM(dom, props);
@@ -100,7 +111,8 @@ function setPropsForDOM(realDOM, props = {}) {
         realDOM.style[styleName] = props.style[styleName];
       });
     } else {
-      realDOM.setAttribute(key, props[key]);
+      // realDOM.setAttribute(key, props[key]);
+      realDOM[key] = props[key];
     }
   }
 }
@@ -108,7 +120,6 @@ function setPropsForDOM(realDOM, props = {}) {
 function getDOMByFunctionComponent(VNode) {
   let { type, props } = VNode;
   const renderFunctionComponentVNode = type(props);
-  console.log(renderFunctionComponentVNode, 'renderFunctionComponentVNode');
   if (!renderFunctionComponentVNode) return null;
   return createDom(renderFunctionComponentVNode);
 }
@@ -140,8 +151,167 @@ export function findDomByVNode(VNode) {
   if (VNode.dom) return VNode.dom;
 }
 
-export function updateDomTree(oldRealDOM, newVNode) {
-  const parentNode = oldRealDOM.parentNode;
-  parentNode.removeChild(oldRealDOM);
-  parentNode.appendChild(createDom(newVNode));
+export function updateDomTree(oldVNode, newVNode, oldRealDOM) {
+  // debugger;
+  // const parentNode = oldRealDOM.parentNode;
+  // parentNode.removeChild(oldRealDOM);
+  // parentNode.appendChild(createDom(newVNode));
+  /**
+   * - 新节点、旧节点都不存在
+   * - 新节点存在，旧节点不存在
+   * - 新节点不存在，旧节点存在
+   * - 新旧节点都存在，但是类型不一样
+   * - 新旧节点都存在，类型一样 -> 需要深入探讨 探索复用相关节点的方案
+   */
+  const operateMap = {
+    NO_OPERATE: !oldVNode && !newVNode,
+    ADD: !oldVNode && !!newVNode,
+    DELETE: !!oldVNode && !newVNode,
+    REPLACE: !!oldVNode && !!newVNode && oldVNode.type !== newVNode.type,
+  };
+  let operateType = Object.keys(operateMap).filter(key => operateMap[key])[0];
+  switch (operateType) {
+    case 'NO_OPERATE':
+      return;
+    case 'ADD':
+      oldRealDOM.parentNode.appendChild(createDom(newVNode));
+      return;
+    case 'DELETE':
+      removeVNode(oldVNode);
+      return;
+    case 'REPLACE':
+      removeVNode(oldVNode);
+      oldRealDOM.parentNode.appendChild(createDom(newVNode));
+      return;
+    default:
+      deepDOMDiff(oldVNode, newVNode);
+      return;
+  }
 }
+
+const removeVNode = oldVNode => {
+  const currentDom = findDomByVNode(oldVNode);
+  currentDom && currentDom.remove();
+};
+
+const deepDOMDiff = (oldVNode, newVNode) => {
+  const diffTypeMap = {
+    ORIGIN_NODE: typeof oldVNode.type === 'string',
+    CLASS_COMPONENT: typeof oldVNode.type === 'function' && oldVNode.type.IS_CLASS_COMPONENT,
+    FUNCTION_COMPONENT: typeof oldVNode.type === 'function',
+    TEXT: oldVNode.type === REACT_TEXT,
+  };
+  let DIFF_TYPE = Object.keys(diffTypeMap).filter(key => diffTypeMap[key])[0];
+  switch (DIFF_TYPE) {
+    case 'ORIGIN_NODE':
+      const currentDOM = (newVNode.dom = findDomByVNode(oldVNode));
+      setPropsForDOM(currentDOM, newVNode.props);
+      updateChildren(currentDOM, oldVNode.props.children, newVNode.props.children);
+      return;
+    case 'CLASS_COMPONENT':
+      updateClassComponent(oldVNode, newVNode);
+      return;
+    case 'FUNCTION_COMPONENT':
+      updateFunctionComponent(oldVNode, newVNode);
+      return;
+    case 'TEXT':
+      newVNode.dom = findDomByVNode(oldVNode);
+      newVNode.dom.textContent = newVNode.props.text;
+      return;
+    default:
+      return;
+  }
+};
+
+// DOM Diff 核心
+const updateChildren = (parentDOM, oldVNodeChildren, newVNodeChildren) => {
+  oldVNodeChildren = (
+    Array.isArray(oldVNodeChildren) ? oldVNodeChildren : [oldVNodeChildren]
+  ).filter(Boolean);
+  newVNodeChildren = (
+    Array.isArray(newVNodeChildren) ? newVNodeChildren : [newVNodeChildren]
+  ).filter(Boolean);
+
+  let lastNotChangedIndex = -1;
+
+  // key与节点之间的对应关系
+  let oldKeyChildMap = {};
+  oldVNodeChildren.forEach((oldVNode, index) => {
+    let oldKey = oldVNode && oldVNode.key ? oldVNode.key : index;
+    oldKeyChildMap[oldKey] = oldVNode;
+  });
+
+  /**
+   * 遍历新的子虚拟DOM数组，找到
+   * - 可以复用但需要移动的节点
+   * - 需要重新创建的节点
+   * - 需要删除的节点
+   * - 剩下的就是可以复用且不用移动的节点
+   */
+  let actions = [];
+  newVNodeChildren.forEach((newVNode, index) => {
+    newVNode.index = index;
+    let newKey = newVNode.key ? newVNode.key : index;
+    let oldVNode = oldKeyChildMap[newKey];
+    if (oldVNode) {
+      deepDOMDiff(oldVNode, newVNode);
+      if (oldVNode.index < lastNotChangedIndex) {
+        actions.push({
+          type: MOVE,
+          oldVNode,
+          newVNode,
+          index,
+        });
+      }
+      delete oldKeyChildMap[newKey];
+      lastNotChangedIndex = Math.max(lastNotChangedIndex, oldVNode.index);
+    } else {
+      actions.push({
+        type: CREATE,
+        newVNode,
+        index,
+      });
+    }
+  });
+  const VNodeMoveTypeSet = actions
+    .filter(action => action.type === MOVE)
+    .map(action => action.oldVNode);
+  const VNodeDeleteTypeSet = Object.values(oldKeyChildMap);
+  VNodeMoveTypeSet.concat(VNodeDeleteTypeSet).forEach(oldVNode => {
+    let currentDOM = findDomByVNode(oldVNode);
+    currentDOM.remove();
+  });
+
+  actions.forEach(action => {
+    const { type, oldVNode, newVNode, index } = action;
+    const childNodes = parentDOM.childNodes;
+    const childNode = childNodes[index];
+    const getDOMForInsert = () => {
+      if (type === CREATE) {
+        return createDom(newVNode);
+      }
+      if (type === MOVE) {
+        return findDomByVNode(oldVNode);
+      }
+    };
+    if (childNode) {
+      parentDOM.insertBefore(getDOMForInsert(), childNode);
+    } else {
+      parentDOM.appendChild(getDOMForInsert());
+    }
+  });
+};
+
+const updateClassComponent = (oldVNode, newVNode) => {
+  const classInstance = (newVNode.classInstance = oldVNode.classInstance);
+  classInstance.updater.launchUpdate();
+};
+
+const updateFunctionComponent = (oldVNode, newVNode) => {
+  let oldDOM = findDomByVNode(oldVNode);
+  if (!oldDOM) return;
+  const { type, props } = newVNode;
+  let newRenderVNode = type(props);
+  updateDomTree(oldVNode.oldRenderVNode, newRenderVNode, oldDOM);
+  newVNode.oldRenderVNode = newRenderVNode;
+};

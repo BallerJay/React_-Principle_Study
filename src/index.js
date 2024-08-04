@@ -91,19 +91,62 @@ import ReactDOM from './react-dom';
 // ReactDOM.render(<CustomTextInput xx="123" />, document.getElementById('root'));
 
 // ------------------------------- forwardRef -------------------------------
-let ref = React.createRef();
-let MyForwardFunctionComponent = React.forwardRef((props, ref) => {
-  return (
-    <div ref={ref} {...props}>
-      forwardRef
-      <span>222</span>
-    </div>
-  );
-});
+// let ref = React.createRef();
+// let MyForwardFunctionComponent = React.forwardRef((props, ref) => {
+//   return (
+//     <div ref={ref} {...props}>
+//       forwardRef_Text
+//       <span>222</span>
+//     </div>
+//   );
+// });
 
-// console.log(<MyForwardFunctionComponent ref={ref} />, 'MyForwardFunctionComponent');
-debugger;
-ReactDOM.render(
-  <MyForwardFunctionComponent className="test" ref={ref} />,
-  document.getElementById('root')
-);
+// // console.log(<MyForwardFunctionComponent ref={ref} />, 'MyForwardFunctionComponent');
+// // debugger;
+// ReactDOM.render(
+//   <MyForwardFunctionComponent className="test" ref={ref} />,
+//   document.getElementById('root')
+// );
+
+// ------------------------------- DOM Diff -------------------------------
+class MyClassComponent extends React.Component {
+  isRest = false;
+  oldArr = ['A', 'B', 'C', 'D', 'E'];
+  newArr = ['C', 'B', 'E', 'F', 'A'];
+  constructor(props) {
+    super(props);
+    this.state = {
+      arr: this.oldArr,
+    };
+  }
+  updateShowArr() {
+    this.setState({ arr: this.isRest ? this.oldArr : this.newArr });
+    this.isRest = !this.isRest;
+  }
+  render() {
+    return (
+      <div>
+        <div
+          className="test-class"
+          style={{
+            color: 'red',
+            cursor: 'pointer',
+            border: '1px solid gray',
+            borderRadius: '6px',
+            display: 'inline-block',
+            padding: '6px 12px',
+          }}
+          onClick={() => this.updateShowArr()}>
+          Change The Text
+        </div>
+        <div>
+          {this.state.arr.map((item, index) => {
+            return <div key={item}>{item}</div>;
+          })}
+        </div>
+      </div>
+    );
+  }
+}
+
+ReactDOM.render(<MyClassComponent />, document.getElementById('root'));

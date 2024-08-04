@@ -1,4 +1,5 @@
 import { REACT_ELEMENT_TYPE } from '../../ReactSymbols';
+import { toVNode } from '../../utils';
 
 const RESERVED_PROPS = {
   key: true,
@@ -73,7 +74,7 @@ export function createElement(type, config, children) {
 
   const childrenLength = arguments.length - 2;
   if (childrenLength === 1) {
-    props.children = children;
+    props.children = toVNode(children);
   } else if (childrenLength > 1) {
     const childArray = Array(childrenLength);
     for (let i = 0; i < childrenLength; i++) {
