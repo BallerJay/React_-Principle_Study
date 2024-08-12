@@ -52,6 +52,7 @@ import ReactDOM from './react-dom';
 //     );
 //   }
 // }
+// ReactDOM.render(<MyClassComponent className="2" />, document.getElementById('root'));
 
 // ------------------------------- ref -------------------------------
 // class CustomTextInput extends React.Component {
@@ -109,44 +110,109 @@ import ReactDOM from './react-dom';
 // );
 
 // ------------------------------- DOM Diff -------------------------------
-class MyClassComponent extends React.Component {
-  isRest = false;
-  oldArr = ['A', 'B', 'C', 'D', 'E'];
-  newArr = ['C', 'B', 'E', 'F', 'A'];
+// class MyClassComponent extends React.Component {
+//   isRest = false;
+//   oldArr = ['A', 'B', 'C', 'D', 'E'];
+//   newArr = ['C', 'B', 'E', 'F', 'A'];
+//   constructor(props) {
+//     super(props);
+//     this.state = {
+//       arr: this.oldArr,
+//     };
+//   }
+//   updateShowArr() {
+//     this.setState({ arr: this.isRest ? this.oldArr : this.newArr });
+//     this.isRest = !this.isRest;
+//   }
+//   render() {
+//     return (
+//       <div>
+//         <div
+//           className="test-class"
+//           style={{
+//             color: 'red',
+//             cursor: 'pointer',
+//             border: '1px solid gray',
+//             borderRadius: '6px',
+//             display: 'inline-block',
+//             padding: '6px 12px',
+//           }}
+//           onClick={() => this.updateShowArr()}>
+//           Change The Text
+//         </div>
+//         <div>
+//           {this.state.arr.map((item, index) => {
+//             return <div key={item}>{item}</div>;
+//           })}
+//         </div>
+//       </div>
+//     );
+//   }
+// }
+
+// ReactDOM.render(<MyClassComponent />, document.getElementById('root'));
+
+// ------------------------------- Life Circle -------------------------------
+class Clock extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      arr: this.oldArr,
-    };
+    this.state = { date: new Date() };
   }
-  updateShowArr() {
-    this.setState({ arr: this.isRest ? this.oldArr : this.newArr });
-    this.isRest = !this.isRest;
+
+  /**
+   * 1. 在组件挂载到页面上之后调用
+   * 2. 需要依赖真实DOM节点的相关初始化动作需要放在这里
+   * 3. 适合加载数据
+   * 4. 适合事件订阅
+   * 5. 不适合在这里调用setState
+   */
+  componentDidMount() {
+    this.timerID = setInterval(() => this.tick(), 1000);
+    console.log('componentDidMount');
   }
+
+  /**
+   * 1. 组件从DOM树上卸载完成之前调用。
+   * 2. 执行一些清理操作，比如清除定时器，取消事件订阅，取消网络请求等等。
+   * 3. 不能在该函数中执行this.setState，不会产生新的渲染。
+   */
+  componentWillUnmount() {
+    clearInterval(this.timerID);
+  }
+
+  /**
+   * 1. 更新完成后调用，初始化渲染不会调用。
+   * 2. 当组件完成更新，需要对DOM进行某种操作的时候，适合在这个函数中进行。
+   * 3. 当当前的props和之前的props有所不同的时候，可以在这里进行有必要的网络请求。
+   * 4. 这里虽然可以调用setState，但是要记住是有条件的调用，否则会陷入死循环。
+   * 5. 如果shouldComponentUpdate返回false，componentDidUpdate不会执行。
+   * 6. 如果实现了getSnapshotBeforeUpdate，componentDidUpdate会在它之后执行，componentDidUpdate会接收到第三个参数
+   */
+  componentDidUpdate(prevProps, prevState) {
+    console.log(prevProps, prevState, 'componentDidUpdate');
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    console.log('shouldComponentUpdate');
+    return true;
+  }
+
+  tick() {
+    this.setState({
+      date: new Date(),
+    });
+  }
+
   render() {
     return (
       <div>
-        <div
-          className="test-class"
-          style={{
-            color: 'red',
-            cursor: 'pointer',
-            border: '1px solid gray',
-            borderRadius: '6px',
-            display: 'inline-block',
-            padding: '6px 12px',
-          }}
-          onClick={() => this.updateShowArr()}>
-          Change The Text
-        </div>
-        <div>
-          {this.state.arr.map((item, index) => {
-            return <div key={item}>{item}</div>;
-          })}
-        </div>
+        <h1>Hello, world!</h1>
+        <h2>It is {this.state.date.toLocaleTimeString()}.</h2>
       </div>
     );
   }
 }
 
-ReactDOM.render(<MyClassComponent />, document.getElementById('root'));
+// const root = ReactDOM.createRoot(document.getElementById('root'));
+// root.render(<Clock />);
+ReactDOM.render(<Clock />, document.getElementById('root'));

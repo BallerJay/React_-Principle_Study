@@ -31,16 +31,24 @@ class Updater {
     }
   }
 
-  launchUpdate() {
+  launchUpdate(nextProps) {
     const { classComponentInstance, pendingStates } = this;
-    if (pendingStates.length === 0) return;
-    classComponentInstance.state = this.pendingStates.reduce((accState, curState) => {
+    if (pendingStates.length === 0 && !nextProps) return;
+    let isShouldUpdate = true;
+    const nextState = this.pendingStates.reduce((accState, curState) => {
       return Object.assign({}, accState, curState);
     }, classComponentInstance.state);
     // 清空
     this.pendingStates.length = 0;
-
-    classComponentInstance.update();
+    if (
+      classComponentInstance.shouldComponentUpdate &&
+      !classComponentInstance.shouldComponentUpdate(nextProps, nextState)
+    ) {
+      isShouldUpdate = false;
+    }
+    classComponentInstance.state = nextState;
+    nextProps && (classComponentInstance.props = nextProps);
+    isShouldUpdate && classComponentInstance.update();
   }
 }
 
@@ -67,5 +75,9 @@ export class Component {
     const newVNode = this.render();
     updateDomTree(oldVNode, newVNode, oldRealDOM);
     this.oldVNode = newVNode;
+    // 执行componentDidUpdate
+    if (this.componentDidUpdate) {
+      this.componentDidUpdate(this.props, this.state);
+    }
   }
 }

@@ -80,7 +80,7 @@ export function createElement(type, config, children) {
     for (let i = 0; i < childrenLength; i++) {
       childArray[i] = arguments[i + 2];
     }
-    props.children = childArray;
+    props.children = childArray.map(toVNode);
   }
 
   // Resolve default props

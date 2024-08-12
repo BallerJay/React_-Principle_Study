@@ -36,6 +36,7 @@ function mount(VNode, container) {
 }
 
 function mountArray(VNodeChildren, parentNode) {
+  if (!Array.isArray(VNodeChildren)) return;
   for (let i = 0; i < VNodeChildren.length; i++) {
     VNodeChildren[i].index = i;
     mount(VNodeChildren[i], parentNode);
@@ -54,8 +55,6 @@ function mountArray(VNodeChildren, parentNode) {
  * @returns
  */
 function createDom(VNode) {
-  // debugger;
-  // console.log(VNode, 'VNode');
   const { type, props, ref } = VNode;
   let dom;
   // forwardRef组件
@@ -127,16 +126,20 @@ function getDOMByFunctionComponent(VNode) {
 function getDOMByClassComponent(VNode) {
   let { type, props, ref } = VNode;
   const instance = new type(props);
+  VNode.classInstance = instance;
+  ref && (ref.current = instance);
   const renderClassComponentVNode = instance.render();
   instance.oldVNode = renderClassComponentVNode;
-  ref && (ref.current = instance);
   // setTimeout(() => {
   //   instance.setState({
   //     name: 'BallerJay',
   //   });
   // }, 3000);
   if (!renderClassComponentVNode) return null;
-  return createDom(renderClassComponentVNode);
+  const realDom = createDom(renderClassComponentVNode);
+  // 执行componentDidMount
+  if (instance.componentDidMount) instance.componentDidMount();
+  return realDom;
 }
 
 function getDomByForwardRefFunctionComponent(VNode) {
@@ -192,6 +195,9 @@ export function updateDomTree(oldVNode, newVNode, oldRealDOM) {
 const removeVNode = oldVNode => {
   const currentDom = findDomByVNode(oldVNode);
   currentDom && currentDom.remove();
+  if (oldVNode.classInstance && oldVNode.classInstance.componentWillUnmount) {
+    oldVNode.classInstance.componentWillUnmount();
+  }
 };
 
 const deepDOMDiff = (oldVNode, newVNode) => {
@@ -304,7 +310,7 @@ const updateChildren = (parentDOM, oldVNodeChildren, newVNodeChildren) => {
 
 const updateClassComponent = (oldVNode, newVNode) => {
   const classInstance = (newVNode.classInstance = oldVNode.classInstance);
-  classInstance.updater.launchUpdate();
+  classInstance.updater.launchUpdate(newVNode.props);
 };
 
 const updateFunctionComponent = (oldVNode, newVNode) => {
