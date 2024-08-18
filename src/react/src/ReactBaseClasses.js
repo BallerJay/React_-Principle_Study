@@ -1,4 +1,5 @@
 import { findDomByVNode, updateDomTree } from '../../react-dom/src/ReactDomLegacy';
+import { deepClone } from '../../utils';
 
 export let updaterQueue = {
   isBatch: false,
@@ -35,6 +36,10 @@ class Updater {
     const { classComponentInstance, pendingStates } = this;
     if (pendingStates.length === 0 && !nextProps) return;
     let isShouldUpdate = true;
+
+    let prevProps = deepClone(classComponentInstance.props);
+    let prevState = deepClone(classComponentInstance.state);
+
     const nextState = this.pendingStates.reduce((accState, curState) => {
       return Object.assign({}, accState, curState);
     }, classComponentInstance.state);
@@ -48,7 +53,7 @@ class Updater {
     }
     classComponentInstance.state = nextState;
     nextProps && (classComponentInstance.props = nextProps);
-    isShouldUpdate && classComponentInstance.update();
+    isShouldUpdate && classComponentInstance.update(prevProps, prevState);
   }
 }
 
@@ -60,24 +65,32 @@ export class Component {
     this.props = props;
   }
   setState(partialState) {
-    // 1. 合并属性
-    this.state = Object.assign({}, this.state, partialState);
-    // 2. 重新渲染进行更新
+    // // 1. 合并属性
+    // this.state = Object.assign({}, this.state, partialState);
+    // // 2. 重新渲染进行更新
+    // this.updater.addState(partialState);
     this.updater.addState(partialState);
   }
-  update() {
+  update(prevProps, prevState) {
     // 1. 获取重新执行render函数后的虚拟DOM -> 新的虚拟DOM
     // 2. 根据新虚拟DOM生成新的真实DOM
     // 3. 将真实DOM挂载到页面上
-
     const oldVNode = this.oldVNode;
     const oldRealDOM = findDomByVNode(oldVNode);
+    if (this.constructor.getDerivedStateFromProps) {
+      let newState = this.constructor.getDerivedStateFromProps(this.props, this.state);
+      this.state = { ...this.state, ...newState };
+    }
+
+    let snapshot =
+      this.getSnapshotBeforeUpdate && this.getSnapshotBeforeUpdate(prevProps, prevState);
+
     const newVNode = this.render();
     updateDomTree(oldVNode, newVNode, oldRealDOM);
     this.oldVNode = newVNode;
     // 执行componentDidUpdate
     if (this.componentDidUpdate) {
-      this.componentDidUpdate(this.props, this.state);
+      this.componentDidUpdate(this.props, this.state, snapshot);
     }
   }
 }

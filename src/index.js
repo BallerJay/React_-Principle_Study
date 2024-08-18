@@ -152,67 +152,207 @@ import ReactDOM from './react-dom';
 
 // ReactDOM.render(<MyClassComponent />, document.getElementById('root'));
 
-// ------------------------------- Life Circle -------------------------------
-class Clock extends React.Component {
+// // ------------------------------- Life Circle -------------------------------
+// class Clock extends React.Component {
+//   constructor(props) {
+//     super(props);
+//     this.state = { date: new Date() };
+//   }
+
+//   /**
+//    * 1. 在组件挂载到页面上之后调用
+//    * 2. 需要依赖真实DOM节点的相关初始化动作需要放在这里
+//    * 3. 适合加载数据
+//    * 4. 适合事件订阅
+//    * 5. 不适合在这里调用setState
+//    */
+//   componentDidMount() {
+//     this.timerID = setInterval(() => this.tick(), 1000);
+//     console.log('componentDidMount');
+//   }
+
+//   /**
+//    * 1. 组件从DOM树上卸载完成之前调用。
+//    * 2. 执行一些清理操作，比如清除定时器，取消事件订阅，取消网络请求等等。
+//    * 3. 不能在该函数中执行this.setState，不会产生新的渲染。
+//    */
+//   componentWillUnmount() {
+//     clearInterval(this.timerID);
+//   }
+
+//   /**
+//    * 1. 更新完成后调用，初始化渲染不会调用。
+//    * 2. 当组件完成更新，需要对DOM进行某种操作的时候，适合在这个函数中进行。
+//    * 3. 当当前的props和之前的props有所不同的时候，可以在这里进行有必要的网络请求。
+//    * 4. 这里虽然可以调用setState，但是要记住是有条件的调用，否则会陷入死循环。
+//    * 5. 如果shouldComponentUpdate返回false，componentDidUpdate不会执行。
+//    * 6. 如果实现了getSnapshotBeforeUpdate，componentDidUpdate会在它之后执行，componentDidUpdate会接收到第三个参数
+//    */
+//   componentDidUpdate(prevProps, prevState) {
+//     console.log(prevProps, prevState, 'componentDidUpdate');
+//   }
+
+//   shouldComponentUpdate(nextProps, nextState) {
+//     console.log('shouldComponentUpdate');
+//     return true;
+//   }
+
+//   tick() {
+//     this.setState({
+//       date: new Date(),
+//     });
+//   }
+
+//   render() {
+//     return (
+//       <div>
+//         <h1>Hello, world!</h1>
+//         <h2>It is {this.state.date.toLocaleTimeString()}.</h2>
+//       </div>
+//     );
+//   }
+// }
+
+// // const root = ReactDOM.createRoot(document.getElementById('root'));
+// // root.render(<Clock />);
+// ReactDOM.render(<Clock />, document.getElementById('root'));
+
+// // ------------------------------- Life Circle(getDerivedStateFromProps) --------------------------------
+// class DerivedState extends React.Component {
+//   constructor(props) {
+//     super(props);
+//     this.state = {
+//       email: 'zhangsanfeng@163.com',
+//       preveUserId: 'zhangsanfeng',
+//     };
+//   }
+
+//   static getDerivedStateFromProps(nextProps, prevState) {
+//     console.log(nextProps, prevState, 'getDerivedStateFromProps');
+//     if (nextProps.userId !== prevState.preveUserId) {
+//       return {
+//         preveUserId: nextProps.userId,
+//         email: nextProps.userId + '@xxx.com',
+//       };
+//     }
+//     return null;
+//   }
+
+//   render() {
+//     console.log(333);
+//     return (
+//       <div>
+//         <h1>email:</h1>
+//         <h2>{this.state.email}</h2>
+//       </div>
+//     );
+//   }
+// }
+// class ParentClass extends React.Component {
+//   constructor(props) {
+//     super(props);
+//     this.state = {
+//       id: 'zhangsanfeng',
+//     };
+//   }
+
+//   changeUserId = () => {
+//     this.setState({ id: 'dongfangbubai' });
+//   };
+//   render() {
+//     return (
+//       <div>
+//         <input type="button" value="点击改变UserId" onClick={() => this.changeUserId()} />
+//         <DerivedState userId={this.state.id} />
+//       </div>
+//     );
+//   }
+// }
+
+// ReactDOM.render(<ParentClass />, document.getElementById('root'));
+
+// // ------------------------------- Life Circle(getSnapshotBeforeUpdate(prevProps, prevState)) --------------------------------
+
+class ScrollingList extends React.Component {
+  isAppend = true;
+  count = 0;
+  intervalID = 0;
   constructor(props) {
     super(props);
-    this.state = { date: new Date() };
+    this.listRef = React.createRef();
+    this.state = {
+      list: [],
+    };
   }
 
-  /**
-   * 1. 在组件挂载到页面上之后调用
-   * 2. 需要依赖真实DOM节点的相关初始化动作需要放在这里
-   * 3. 适合加载数据
-   * 4. 适合事件订阅
-   * 5. 不适合在这里调用setState
-   */
-  componentDidMount() {
-    this.timerID = setInterval(() => this.tick(), 1000);
-    console.log('componentDidMount');
+  getSnapshotBeforeUpdate(prevProps, prevState) {
+    // 我们是否要向列表中添加新内容？
+    // 捕获滚动的​​位置，以便我们稍后可以调整滚动。
+    // console.log(this.state, prevState.list, '---');
+    if (prevState.list.length < this.state.list.length) {
+      const list = this.listRef.current;
+      return list.scrollHeight - list.scrollTop;
+    }
+    return null;
   }
 
-  /**
-   * 1. 组件从DOM树上卸载完成之前调用。
-   * 2. 执行一些清理操作，比如清除定时器，取消事件订阅，取消网络请求等等。
-   * 3. 不能在该函数中执行this.setState，不会产生新的渲染。
-   */
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    // 如果我们有快照值，那么说明我们刚刚添加了新内容。
+    // 调整滚动，使得这些新内容不会将旧内容推出视野。
+    //（这里的 snapshot 是 getSnapshotBeforeUpdate 返回的值）
+    if (snapshot !== null) {
+      const list = this.listRef.current;
+      list.scrollTop = list.scrollHeight - snapshot;
+    }
+  }
+
   componentWillUnmount() {
-    clearInterval(this.timerID);
+    clearInterval(this.intervalID);
   }
 
-  /**
-   * 1. 更新完成后调用，初始化渲染不会调用。
-   * 2. 当组件完成更新，需要对DOM进行某种操作的时候，适合在这个函数中进行。
-   * 3. 当当前的props和之前的props有所不同的时候，可以在这里进行有必要的网络请求。
-   * 4. 这里虽然可以调用setState，但是要记住是有条件的调用，否则会陷入死循环。
-   * 5. 如果shouldComponentUpdate返回false，componentDidUpdate不会执行。
-   * 6. 如果实现了getSnapshotBeforeUpdate，componentDidUpdate会在它之后执行，componentDidUpdate会接收到第三个参数
-   */
-  componentDidUpdate(prevProps, prevState) {
-    console.log(prevProps, prevState, 'componentDidUpdate');
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    console.log('shouldComponentUpdate');
-    return true;
-  }
-
-  tick() {
-    this.setState({
-      date: new Date(),
-    });
-  }
+  appendData = () => {
+    if (this.isAppend) {
+      this.intervalID = setInterval(() => {
+        this.setState({
+          list: [...this.state.list, this.count++],
+        });
+      }, 1000);
+    } else {
+      clearInterval(this.intervalID);
+    }
+    this.isAppend = !this.isAppend;
+  };
 
   render() {
     return (
       <div>
-        <h1>Hello, world!</h1>
-        <h2>It is {this.state.date.toLocaleTimeString()}.</h2>
+        <input type="button" onClick={() => this.appendData()} value="追加/暂停追加数据" />
+        <div
+          ref={this.listRef}
+          style={{
+            overflow: 'auto',
+            height: '400px',
+            backgroundColor: '#efefef',
+          }}>
+          {this.state.list.map(item => {
+            return (
+              <div
+                key={item}
+                style={{
+                  height: '60px',
+                  padding: '10px',
+                  marginTop: '10px',
+                  border: '1px solid #ccc',
+                  borderRadius: '5px',
+                }}>
+                {item}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
 }
 
-// const root = ReactDOM.createRoot(document.getElementById('root'));
-// root.render(<Clock />);
-ReactDOM.render(<Clock />, document.getElementById('root'));
+ReactDOM.render(<ScrollingList />, document.getElementById('root'));
