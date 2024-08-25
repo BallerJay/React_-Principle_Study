@@ -1,5 +1,5 @@
 import { findDomByVNode, updateDomTree } from '../../react-dom/src/ReactDomLegacy';
-import { deepClone } from '../../utils';
+import { deepClone, shallowEqual } from '../../utils';
 
 export let updaterQueue = {
   isBatch: false,
@@ -92,5 +92,11 @@ export class Component {
     if (this.componentDidUpdate) {
       this.componentDidUpdate(this.props, this.state, snapshot);
     }
+  }
+}
+
+export class PureComponent extends Component {
+  shouldComponentUpdate(nextProps, nextState) {
+    return !shallowEqual(this.props, nextProps) || !shallowEqual(this.state, nextState);
   }
 }

@@ -273,86 +273,133 @@ import ReactDOM from './react-dom';
 
 // // ------------------------------- Life Circle(getSnapshotBeforeUpdate(prevProps, prevState)) --------------------------------
 
-class ScrollingList extends React.Component {
-  isAppend = true;
-  count = 0;
-  intervalID = 0;
+// class ScrollingList extends React.Component {
+//   isAppend = true;
+//   count = 0;
+//   intervalID = 0;
+//   constructor(props) {
+//     super(props);
+//     this.listRef = React.createRef();
+//     this.state = {
+//       list: [],
+//     };
+//   }
+
+//   getSnapshotBeforeUpdate(prevProps, prevState) {
+//     // 我们是否要向列表中添加新内容？
+//     // 捕获滚动的​​位置，以便我们稍后可以调整滚动。
+//     // console.log(this.state, prevState.list, '---');
+//     if (prevState.list.length < this.state.list.length) {
+//       const list = this.listRef.current;
+//       return list.scrollHeight - list.scrollTop;
+//     }
+//     return null;
+//   }
+
+//   componentDidUpdate(prevProps, prevState, snapshot) {
+//     // 如果我们有快照值，那么说明我们刚刚添加了新内容。
+//     // 调整滚动，使得这些新内容不会将旧内容推出视野。
+//     //（这里的 snapshot 是 getSnapshotBeforeUpdate 返回的值）
+//     if (snapshot !== null) {
+//       const list = this.listRef.current;
+//       list.scrollTop = list.scrollHeight - snapshot;
+//     }
+//   }
+
+//   componentWillUnmount() {
+//     clearInterval(this.intervalID);
+//   }
+
+//   appendData = () => {
+//     if (this.isAppend) {
+//       this.intervalID = setInterval(() => {
+//         this.setState({
+//           list: [...this.state.list, this.count++],
+//         });
+//       }, 1000);
+//     } else {
+//       clearInterval(this.intervalID);
+//     }
+//     this.isAppend = !this.isAppend;
+//   };
+
+//   render() {
+//     return (
+//       <div>
+//         <input type="button" onClick={() => this.appendData()} value="追加/暂停追加数据" />
+//         <div
+//           ref={this.listRef}
+//           style={{
+//             overflow: 'auto',
+//             height: '400px',
+//             backgroundColor: '#efefef',
+//           }}>
+//           {this.state.list.map(item => {
+//             return (
+//               <div
+//                 key={item}
+//                 style={{
+//                   height: '60px',
+//                   padding: '10px',
+//                   marginTop: '10px',
+//                   border: '1px solid #ccc',
+//                   borderRadius: '5px',
+//                 }}>
+//                 {item}
+//               </div>
+//             );
+//           })}
+//         </div>
+//       </div>
+//     );
+//   }
+// }
+
+// ReactDOM.render(<ScrollingList />, document.getElementById('root'));
+
+// ------------------------------- pureComponent --------------------------------
+class Greeting extends React.PureComponent {
+  render() {
+    console.log(this.props, 'update');
+    return <h1>Hello- {this.props.name}</h1>;
+  }
+}
+class MyClassApp extends React.Component {
   constructor(props) {
     super(props);
-    this.listRef = React.createRef();
     this.state = {
-      list: [],
+      name: '张三',
+      address: '北京',
     };
   }
 
-  getSnapshotBeforeUpdate(prevProps, prevState) {
-    // 我们是否要向列表中添加新内容？
-    // 捕获滚动的​​位置，以便我们稍后可以调整滚动。
-    // console.log(this.state, prevState.list, '---');
-    if (prevState.list.length < this.state.list.length) {
-      const list = this.listRef.current;
-      return list.scrollHeight - list.scrollTop;
-    }
-    return null;
-  }
-
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    // 如果我们有快照值，那么说明我们刚刚添加了新内容。
-    // 调整滚动，使得这些新内容不会将旧内容推出视野。
-    //（这里的 snapshot 是 getSnapshotBeforeUpdate 返回的值）
-    if (snapshot !== null) {
-      const list = this.listRef.current;
-      list.scrollTop = list.scrollHeight - snapshot;
-    }
-  }
-
-  componentWillUnmount() {
-    clearInterval(this.intervalID);
-  }
-
-  appendData = () => {
-    if (this.isAppend) {
-      this.intervalID = setInterval(() => {
-        this.setState({
-          list: [...this.state.list, this.count++],
-        });
-      }, 1000);
-    } else {
-      clearInterval(this.intervalID);
-    }
-    this.isAppend = !this.isAppend;
+  setName = name => {
+    this.setState({ name });
   };
+
+  setAddress = address => {
+    this.setState({ address });
+  };
+
+  componentDidUpdate() {
+    console.log('componentDidUpdate');
+  }
 
   render() {
     return (
       <div>
-        <input type="button" onClick={() => this.appendData()} value="追加/暂停追加数据" />
-        <div
-          ref={this.listRef}
-          style={{
-            overflow: 'auto',
-            height: '400px',
-            backgroundColor: '#efefef',
-          }}>
-          {this.state.list.map(item => {
-            return (
-              <div
-                key={item}
-                style={{
-                  height: '60px',
-                  padding: '10px',
-                  marginTop: '10px',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                }}>
-                {item}
-              </div>
-            );
-          })}
-        </div>
+        <label>
+          Name{': '}
+          <input value={this.state.name} onInput={e => this.setName(e.target.value)} />
+        </label>
+        <label>
+          Address{': '}
+          <input value={this.state.address} onInput={e => this.setAddress(e.target.value)} />
+        </label>
+        <Greeting name={this.state.name} />
       </div>
     );
   }
 }
 
-ReactDOM.render(<ScrollingList />, document.getElementById('root'));
+ReactDOM.render(<MyClassApp />, document.getElementById('root'));

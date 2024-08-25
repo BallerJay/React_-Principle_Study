@@ -45,3 +45,16 @@ export const deepClone = data => {
     return resultValue;
   }
 };
+
+// 浅比较
+export const shallowEqual = (value1, value2) => {
+  if (value1 === value2) return true;
+  if (getType(value1) !== getType(value2)) return false;
+  let keys1 = Object.keys(value1);
+  let keys2 = Object.keys(value2);
+  if (keys1.length !== keys2.length) return false;
+  for (let key of keys1) {
+    if (value1[key] !== value2[key]) return false;
+  }
+  return true;
+};
