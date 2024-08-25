@@ -357,13 +357,19 @@ import ReactDOM from './react-dom';
 
 // ReactDOM.render(<ScrollingList />, document.getElementById('root'));
 
-// ------------------------------- pureComponent --------------------------------
-class Greeting extends React.PureComponent {
-  render() {
-    console.log(this.props, 'update');
-    return <h1>Hello- {this.props.name}</h1>;
-  }
-}
+// ------------------------------- pureComponent/memo --------------------------------
+// class Greeting extends React.PureComponent {
+//   render() {
+//     console.log(this.props, 'update');
+//     return <h1>Hello- {this.props.name}</h1>;
+//   }
+// }
+
+const Greeting = React.memo(({ name }) => {
+  console.log(name, 'update');
+  return <h1>Hello- {name}</h1>;
+});
+
 class MyClassApp extends React.Component {
   constructor(props) {
     super(props);
