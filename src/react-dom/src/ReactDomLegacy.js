@@ -48,6 +48,10 @@ function mount(VNode, container) {
 function mountArray(VNodeChildren, parentNode) {
   if (!Array.isArray(VNodeChildren)) return;
   for (let i = 0; i < VNodeChildren.length; i++) {
+    if (!VNodeChildren[i]) {
+      VNodeChildren.splice(i, 1);
+      continue;
+    }
     VNodeChildren[i].index = i;
     mount(VNodeChildren[i], parentNode);
   }

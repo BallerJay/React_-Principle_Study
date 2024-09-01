@@ -27,3 +27,30 @@ export const useReducer = (reducer, initialState) => {
   };
   return [states[hookIndex++], dispatch];
 };
+
+export const useEffect = (callback, deps = []) => {
+  const currentIndex = hookIndex;
+  const [destroyCallback, preDeps] = states[hookIndex] || [null, null];
+  if (!states[hookIndex] || deps.some((item, index) => item !== preDeps[index])) {
+    // setTimeout 在EventLoop中是宏任务，所以会在当前宏任务（页面渲染完成后）执行完毕后执行
+    setTimeout(() => {
+      destroyCallback && destroyCallback();
+      // callback() 调用之后返回的其实是 destroyCallback
+      states[currentIndex] = [callback(), deps];
+    });
+  }
+  hookIndex++;
+};
+
+export const useLayoutEffect = (callback, deps = []) => {
+  const currentIndex = hookIndex;
+  const [destroyCallback, preDeps] = states[hookIndex] || [null, null];
+  if (!states[hookIndex] || deps.some((item, index) => item !== preDeps[index])) {
+    queueMicrotask(() => {
+      destroyCallback && destroyCallback();
+      // callback() 调用之后返回的其实是 destroyCallback
+      states[currentIndex] = [callback(), deps];
+    });
+  }
+  hookIndex++;
+};

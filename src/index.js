@@ -1,4 +1,4 @@
-import React, { useState, useReducer } from './react';
+import React, { useState, useReducer, useEffect, useLayoutEffect } from './react';
 import ReactDOM from './react-dom';
 // import React from 'react'
 // import ReactDOM from 'react-dom/client';
@@ -428,21 +428,83 @@ import ReactDOM from './react-dom';
 // ReactDOM.render(<Counter />, document.getElementById('root'));
 
 // ------------------------------- useReducer -------------------------------
-function reducer(state, action) {
-  if (action.type === 'increment') {
-    return { age: state.age + 1 };
-  }
-  return state;
+// function reducer(state, action) {
+//   if (action.type === 'increment') {
+//     return { age: state.age + 1 };
+//   }
+//   return state;
+// }
+// function Counter() {
+//   const [state, dispatch] = useReducer(reducer, { age: 42 });
+
+//   return (
+//     <div>
+//       <button onClick={() => dispatch({ type: 'increment' })}>Increment</button>
+//       <p>Hello! You are {state.age}</p>
+//     </div>
+//   );
+// }
+
+// ReactDOM.render(<Counter />, document.getElementById('root'));
+
+// ------------------------------- useEffect -------------------------------
+
+export function createConnection(serverUrl, roomId) {
+  // 真正的实现会实际连接到服务器
+  return {
+    connect() {
+      console.log('✅ Connecting to "' + roomId + '" room at ' + serverUrl + '...');
+    },
+    disconnect() {
+      console.log('❌ Disconnected from "' + roomId + '" room at ' + serverUrl);
+    },
+  };
 }
-function Counter() {
-  const [state, dispatch] = useReducer(reducer, { age: 42 });
+
+function ChatRoom({ roomId }) {
+  const [serverUrl, setServerUrl] = useState('https://localhost:1234');
+
+  useLayoutEffect(() => {
+    console.log('useLayoutEffect');
+  })
+
+  useEffect(() => {
+    console.log('useEffect');
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, [roomId, serverUrl]);
 
   return (
     <div>
-      <button onClick={() => dispatch({ type: 'increment' })}>Increment</button>
-      <p>Hello! You are {state.age}</p>
+      <label>
+        Server URL: <input value={serverUrl} onInput={e => setServerUrl(e.target.value)} />
+      </label>
+      <h1>Welcome to the {roomId} room!</h1>
     </div>
   );
 }
 
-ReactDOM.render(<Counter />, document.getElementById('root'));
+function App() {
+  const [roomId, setRoomId] = useState('general');
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <label>
+        Choose the chat room:{' '}
+        <select value={roomId} onChange={e => setRoomId(e.target.value)}>
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <button onClick={() => setShow(!show)}>{show ? 'Close chat' : 'Open chat'}</button>
+      {show && <hr />}
+      {show && <ChatRoom roomId={roomId} />}
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));
