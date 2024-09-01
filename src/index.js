@@ -1,4 +1,4 @@
-import React from './react';
+import React, { useState } from './react';
 import ReactDOM from './react-dom';
 // import React from 'react'
 // import ReactDOM from 'react-dom/client';
@@ -365,47 +365,64 @@ import ReactDOM from './react-dom';
 //   }
 // }
 
-const Greeting = React.memo(({ name }) => {
-  console.log(name, 'update');
-  return <h1>Hello- {name}</h1>;
-});
+// const Greeting = React.memo(({ name }) => {
+//   console.log(name, 'update');
+//   return <h1>Hello- {name}</h1>;
+// });
 
-class MyClassApp extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      name: '张三',
-      address: '北京',
-    };
-  }
+// class MyClassApp extends React.Component {
+//   constructor(props) {
+//     super(props);
+//     this.state = {
+//       name: '张三',
+//       address: '北京',
+//     };
+//   }
 
-  setName = name => {
-    this.setState({ name });
+//   setName = name => {
+//     this.setState({ name });
+//   };
+
+//   setAddress = address => {
+//     this.setState({ address });
+//   };
+
+//   componentDidUpdate() {
+//     console.log('componentDidUpdate');
+//   }
+
+//   render() {
+//     return (
+//       <div>
+//         <label>
+//           Name{': '}
+//           <input value={this.state.name} onInput={e => this.setName(e.target.value)} />
+//         </label>
+//         <label>
+//           Address{': '}
+//           <input value={this.state.address} onInput={e => this.setAddress(e.target.value)} />
+//         </label>
+//         <Greeting name={this.state.name} />
+//       </div>
+//     );
+//   }
+// }
+
+// ReactDOM.render(<MyClassApp />, document.getElementById('root'));
+
+// ------------------------------- Hooks  -------------------------------
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  const handleClick = () => {
+    setCount(count + 1);
   };
-
-  setAddress = address => {
-    this.setState({ address });
-  };
-
-  componentDidUpdate() {
-    console.log('componentDidUpdate');
-  }
-
-  render() {
-    return (
-      <div>
-        <label>
-          Name{': '}
-          <input value={this.state.name} onInput={e => this.setName(e.target.value)} />
-        </label>
-        <label>
-          Address{': '}
-          <input value={this.state.address} onInput={e => this.setAddress(e.target.value)} />
-        </label>
-        <Greeting name={this.state.name} />
-      </div>
-    );
-  }
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={handleClick}>Increment</button>
+    </div>
+  );
 }
 
-ReactDOM.render(<MyClassApp />, document.getElementById('root'));
+ReactDOM.render(<Counter />, document.getElementById('root'));

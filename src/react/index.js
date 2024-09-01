@@ -4,6 +4,8 @@ import { createRef } from './src/ReactCreateRef';
 import { forwardRef } from './src/ReactForwardRef';
 import { memo } from './src/ReactMemo';
 
+export * from './ReactHooks';
+
 const React = {
   Component,
   createElement,

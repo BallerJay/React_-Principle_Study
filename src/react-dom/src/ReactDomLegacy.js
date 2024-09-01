@@ -12,6 +12,10 @@ import {
 import { addEvent } from './ReactEvent';
 import { shallowEqual } from '../../utils';
 
+import { resetHookIndex } from '../../react/index';
+
+export let emitUpdateForHooks;
+
 export function render(VNode, container) {
   /**
    * @description
@@ -25,6 +29,10 @@ export function render(VNode, container) {
   }
 
   mount(VNode, container);
+  emitUpdateForHooks = () => {
+    resetHookIndex();
+    updateDomTree(VNode, VNode, findDomByVNode(VNode));
+  };
 }
 
 function mount(VNode, container) {
@@ -128,6 +136,7 @@ function getDOMByFunctionComponent(VNode) {
   let { type, props } = VNode;
   const renderFunctionComponentVNode = type(props);
   if (!renderFunctionComponentVNode) return null;
+  VNode.oldRenderVNode = renderFunctionComponentVNode;
   let realDOM = createDom(renderFunctionComponentVNode);
   VNode.dom = realDOM;
   return realDOM;
