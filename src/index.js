@@ -1,4 +1,4 @@
-import React, { useState } from './react';
+import React, { useState, useReducer } from './react';
 import ReactDOM from './react-dom';
 // import React from 'react'
 // import ReactDOM from 'react-dom/client';
@@ -410,17 +410,37 @@ import ReactDOM from './react-dom';
 
 // ReactDOM.render(<MyClassApp />, document.getElementById('root'));
 
-// ------------------------------- Hooks  -------------------------------
+// ------------------------------- Hooks -------------------------------
+// ------------------------------- useState -------------------------------
+// function Counter() {
+//   const [count, setCount] = useState(0);
+//   const handleClick = () => {
+//     setCount(count + 1);
+//   };
+//   return (
+//     <div>
+//       <p>Count: {count}</p>
+//       <button onClick={handleClick}>Increment</button>
+//     </div>
+//   );
+// }
 
+// ReactDOM.render(<Counter />, document.getElementById('root'));
+
+// ------------------------------- useReducer -------------------------------
+function reducer(state, action) {
+  if (action.type === 'increment') {
+    return { age: state.age + 1 };
+  }
+  return state;
+}
 function Counter() {
-  const [count, setCount] = useState(0);
-  const handleClick = () => {
-    setCount(count + 1);
-  };
+  const [state, dispatch] = useReducer(reducer, { age: 42 });
+
   return (
     <div>
-      <p>Count: {count}</p>
-      <button onClick={handleClick}>Increment</button>
+      <button onClick={() => dispatch({ type: 'increment' })}>Increment</button>
+      <p>Hello! You are {state.age}</p>
     </div>
   );
 }
