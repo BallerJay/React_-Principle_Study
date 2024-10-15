@@ -63,3 +63,36 @@ export const useRef = initialValue => {
 export const useImperativeHandle = (ref, createHandle) => {
   ref.current = createHandle();
 };
+
+export const useMemo = (callback, deps = []) => {
+  const currentIndex = hookIndex;
+  const [cachedValue, cachedDeps] = states[currentIndex] || [null, null];
+
+  if (!cachedDeps || deps.some((dep, i) => dep !== cachedDeps[i])) {
+    // 依赖项变化或首次调用,重新计算
+    const newValue = callback();
+    states[currentIndex] = [newValue, deps];
+    hookIndex++;
+    return newValue;
+  } else {
+    // 依赖项未变化,返回缓存的值
+    hookIndex++;
+    return cachedValue;
+  }
+};
+
+export const useCallback = (callback, deps = []) => {
+  const currentIndex = hookIndex;
+  const [cachedCallback, cachedDeps] = states[currentIndex] || [null, null];
+
+  if (!cachedDeps || deps.some((dep, i) => dep !== cachedDeps[i])) {
+    // 依赖项变化或首次调用,创建新的回调函数
+    states[currentIndex] = [callback, deps];
+    hookIndex++;
+    return callback;
+  } else {
+    // 依赖项未变化,返回缓存的回调函数
+    hookIndex++;
+    return cachedCallback;
+  }
+};

@@ -5,6 +5,8 @@ import React, {
   useLayoutEffect,
   useRef,
   useImperativeHandle,
+  useMemo,
+  useCallback,
 } from './react';
 import ReactDOM from './react-dom';
 // import React from 'react'
@@ -535,27 +537,55 @@ import ReactDOM from './react-dom';
 
 // ------------------------------- useImperativeHandle -------------------------------
 
-const MyInput = React.forwardRef((props, ref) => {
-  const inputRef = useRef(null);
-  useImperativeHandle(ref, () => ({
-    focus() {
-      inputRef.current.focus();
-    },
-  }));
-  return <input ref={inputRef} {...props} />;
+// const MyInput = React.forwardRef((props, ref) => {
+//   const inputRef = useRef(null);
+//   useImperativeHandle(ref, () => ({
+//     focus() {
+//       inputRef.current.focus();
+//     },
+//   }));
+//   return <input ref={inputRef} {...props} />;
+// });
+
+// function Form() {
+//   const ref = useRef(null);
+//   const handleClick = () => {
+//     ref.current.focus();
+//   };
+//   return (
+//     <div>
+//       <MyInput label="Enter your name" ref={ref} />
+//       <button onClick={handleClick}>Focus the input</button>
+//     </div>
+//   );
+// }
+
+// ReactDOM.render(<Form />, document.getElementById('root'));
+
+// ------------------------------- useMemo -------------------------------
+
+const MemoChildComponent = React.memo(function ({ data, handleClick }) {
+  console.log('child render');
+  return <button onClick={handleClick}>Age: {data.age}</button>;
 });
 
-function Form() {
-  const ref = useRef(null);
-  const handleClick = () => {
-    ref.current.focus();
-  };
+function App() {
+  console.log('App render');
+  const [name, setName] = useState('Summer');
+  const [age, setAge] = useState(30);
+
+  let data = useMemo(() => ({ age }), [age]);
+
+  const handleClick = useCallback(() => {
+    setAge(age + 1);
+  }, [age]);
+
   return (
     <div>
-      <MyInput label="Enter your name" ref={ref} />
-      <button onClick={handleClick}>Focus the input</button>
+      <input onInput={e => setName(e.target.value)} />
+      <MemoChildComponent data={data} handleClick={handleClick} />
     </div>
   );
 }
 
-ReactDOM.render(<Form />, document.getElementById('root'));
+ReactDOM.render(<App />, document.getElementById('root'));
