@@ -1,4 +1,11 @@
-import React, { useState, useReducer, useEffect, useLayoutEffect } from './react';
+import React, {
+  useState,
+  useReducer,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useImperativeHandle,
+} from './react';
 import ReactDOM from './react-dom';
 // import React from 'react'
 // import ReactDOM from 'react-dom/client';
@@ -449,62 +456,106 @@ import ReactDOM from './react-dom';
 
 // ------------------------------- useEffect -------------------------------
 
-export function createConnection(serverUrl, roomId) {
-  // 真正的实现会实际连接到服务器
-  return {
-    connect() {
-      console.log('✅ Connecting to "' + roomId + '" room at ' + serverUrl + '...');
+// export function createConnection(serverUrl, roomId) {
+//   // 真正的实现会实际连接到服务器
+//   return {
+//     connect() {
+//       console.log('✅ Connecting to "' + roomId + '" room at ' + serverUrl + '...');
+//     },
+//     disconnect() {
+//       console.log('❌ Disconnected from "' + roomId + '" room at ' + serverUrl);
+//     },
+//   };
+// }
+
+// function ChatRoom({ roomId }) {
+//   const [serverUrl, setServerUrl] = useState('https://localhost:1234');
+
+//   useLayoutEffect(() => {
+//     console.log('useLayoutEffect');
+//   });
+
+//   useEffect(() => {
+//     console.log('useEffect');
+//     const connection = createConnection(serverUrl, roomId);
+//     connection.connect();
+//     return () => {
+//       connection.disconnect();
+//     };
+//   }, [roomId, serverUrl]);
+
+//   return (
+//     <div>
+//       <label>
+//         Server URL: <input value={serverUrl} onInput={e => setServerUrl(e.target.value)} />
+//       </label>
+//       <h1>Welcome to the {roomId} room!</h1>
+//     </div>
+//   );
+// }
+
+// function App() {
+//   const [roomId, setRoomId] = useState('general');
+//   const [show, setShow] = useState(false);
+//   return (
+//     <div>
+//       <label>
+//         Choose the chat room:{' '}
+//         <select value={roomId} onChange={e => setRoomId(e.target.value)}>
+//           <option value="general">general</option>
+//           <option value="travel">travel</option>
+//           <option value="music">music</option>
+//         </select>
+//       </label>
+//       <button onClick={() => setShow(!show)}>{show ? 'Close chat' : 'Open chat'}</button>
+//       {show && <hr />}
+//       {show && <ChatRoom roomId={roomId} />}
+//     </div>
+//   );
+// }
+
+// ReactDOM.render(<App />, document.getElementById('root'));
+
+// ------------------------------- useRef -------------------------------
+
+// function Form() {
+//   const inputRef = useRef(null);
+//   const handleClick = () => {
+//     inputRef.current.focus();
+//   };
+//   return (
+//     <div>
+//       <input ref={inputRef} />
+//       <button onClick={handleClick}>Focus the input</button>
+//     </div>
+//   );
+// }
+
+// ReactDOM.render(<Form />, document.getElementById('root'));
+
+// ------------------------------- useImperativeHandle -------------------------------
+
+const MyInput = React.forwardRef((props, ref) => {
+  const inputRef = useRef(null);
+  useImperativeHandle(ref, () => ({
+    focus() {
+      inputRef.current.focus();
     },
-    disconnect() {
-      console.log('❌ Disconnected from "' + roomId + '" room at ' + serverUrl);
-    },
+  }));
+  return <input ref={inputRef} {...props} />;
+});
+
+function Form() {
+  const ref = useRef(null);
+  const handleClick = () => {
+    ref.current.focus();
   };
-}
-
-function ChatRoom({ roomId }) {
-  const [serverUrl, setServerUrl] = useState('https://localhost:1234');
-
-  useLayoutEffect(() => {
-    console.log('useLayoutEffect');
-  })
-
-  useEffect(() => {
-    console.log('useEffect');
-    const connection = createConnection(serverUrl, roomId);
-    connection.connect();
-    return () => {
-      connection.disconnect();
-    };
-  }, [roomId, serverUrl]);
-
   return (
     <div>
-      <label>
-        Server URL: <input value={serverUrl} onInput={e => setServerUrl(e.target.value)} />
-      </label>
-      <h1>Welcome to the {roomId} room!</h1>
+      <MyInput label="Enter your name" ref={ref} />
+      <button onClick={handleClick}>Focus the input</button>
     </div>
   );
 }
 
-function App() {
-  const [roomId, setRoomId] = useState('general');
-  const [show, setShow] = useState(false);
-  return (
-    <div>
-      <label>
-        Choose the chat room:{' '}
-        <select value={roomId} onChange={e => setRoomId(e.target.value)}>
-          <option value="general">general</option>
-          <option value="travel">travel</option>
-          <option value="music">music</option>
-        </select>
-      </label>
-      <button onClick={() => setShow(!show)}>{show ? 'Close chat' : 'Open chat'}</button>
-      {show && <hr />}
-      {show && <ChatRoom roomId={roomId} />}
-    </div>
-  );
-}
-
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.render(<Form />, document.getElementById('root'));

@@ -54,3 +54,12 @@ export const useLayoutEffect = (callback, deps = []) => {
   }
   hookIndex++;
 };
+
+export const useRef = initialValue => {
+  states[hookIndex] = states[hookIndex] || { current: initialValue };
+  return states[hookIndex++];
+};
+
+export const useImperativeHandle = (ref, createHandle) => {
+  ref.current = createHandle();
+};
